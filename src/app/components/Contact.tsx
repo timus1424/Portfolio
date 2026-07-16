@@ -25,7 +25,7 @@ export function Contact() {
     },
     {
       label: 'Resume',
-      href: 'https://drive.google.com/file/d/13vhbDXmOfKAAPCVxZqiTFtLrAsO9Y0aC/view?usp=sharing',
+      href: 'https://drive.google.com/file/d/1yJnZuMXSV32tyzsCxotE5L5CFjCg538l/view?usp=drive_link',
       icon: FileDown,
     },
   ];
