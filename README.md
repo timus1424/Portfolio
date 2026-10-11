@@ -6,7 +6,7 @@
 
 *I like turning ideas into usable products—and learning how the systems behind them work.*
 
-[• Portfolio](https://ashborn.com) · [• GitHub](https://github.com/timus1424) · [• LinkedIn](https://linkedin.com/in/sumit-mintri-ashborn)
+[• Portfolio](https://sumitmintriportfolio.vercel.app/)  [• GitHub](https://github.com/timus1424)  [• LinkedIn](https://linkedin.com/in/sumit-mintri-ashborn)
 
 </div>
 
