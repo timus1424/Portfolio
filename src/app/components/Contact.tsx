@@ -20,7 +20,7 @@ export function Contact() {
     },
     {
       label: 'LinkedIn',
-      href: 'www.linkedin.com/in/sumit-mintri-ashborn',
+      href: 'https://www.linkedin.com/in/sumit-mintri-ashborn',
       icon: Linkedin,
     },
     {
