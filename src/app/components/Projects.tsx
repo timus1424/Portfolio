@@ -15,6 +15,7 @@ interface Project {
     caseStudy?: string;
   };
   thumbnail: string;
+  palette: [string, string, string, string, string];
   details: {
     overview: string;
     features: string[];
@@ -56,6 +57,7 @@ export function Projects() {
       },
       thumbnail:
         "https://raw.githubusercontent.com/timus1424/thumbnails/main/party_pal.png",
+      palette: ["#171311", "#2D211D", "#F7EFE5", "#F28B55", "#D84C85"],
       details: {
         overview:
           "Developed during Devopia, a Dell-supported hackathon involving 120+ participants and 32 competing teams. The platform focused on improving event coordination and planning through AI-assisted workflows, usability-focused design, and streamlined user interaction.",
@@ -89,6 +91,7 @@ export function Projects() {
     demo: 'https://pair-proto-76924666.figma.site/',
   },
   thumbnail: 'https://raw.githubusercontent.com/timus1424/FaceAttendanceTracker/main/Face%20Recognition%20Attendance%20Tracker/Face_Attendance.png',
+  palette: ['#0B1715', '#17332D', '#F1F0E7', '#70B7A0', '#D6C79C'],
   details: {
     overview: 'Developed during a hackathon organized by SIGIL (Special Interest Group and Industry Liaison), a constituent body under ACCESS (All Core Computer Engineering Student Society). The project focused on improving attendance management through AI-assisted workflows, facial recognition concepts, and usability-focused system design.',
     features: [
@@ -119,10 +122,10 @@ export function Projects() {
   status: 'Prototype',
   role: 'Product Design, Workflow Structuring & UI/UX',
   links: {
-    github: 'https://github.com/timus1424/FaceAttendanceTracker',
     demo: 'https://circus-north-87402779.figma.site/',
   },
   thumbnail: 'https://raw.githubusercontent.com/timus1424/thumbnails/main/1778977566782.jpeg',
+  palette: ['#100F0C', '#242117', '#F2EBD5', '#C69A4B', '#6F8C69'],
   details: {
     overview: 'Designed as a personal finance tracking prototype inspired by modern budgeting applications like TrackWallet. The project explored AI-assisted workflows, gamification concepts, and usability-focused financial management systems while experimenting with scalable UI structuring and smart productivity features.',
     features: [
@@ -321,6 +324,8 @@ export function Projects() {
                   <img
                     src={project.thumbnail}
                     alt={project.title}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                 </div>
@@ -363,6 +368,18 @@ export function Projects() {
                         {tech}
                       </span>
                     ))}
+                  </div>
+
+                  <div className="mb-5 flex items-center gap-2" aria-label={`Color palette for ${project.title}`}>
+                    {project.palette.map((color, colorIndex) => (
+                      <span
+                        key={color}
+                        title={`${['Background', 'Surface', 'Text', 'Accent', 'Accent 2'][colorIndex]} ${color}`}
+                        className="h-5 w-5 rounded-full border border-white/10"
+                        style={{ backgroundColor: color }}
+                      />
+                    ))}
+                    <span className="ml-1 text-[10px] uppercase tracking-[0.15em] text-muted-foreground/70">Color study</span>
                   </div>
 
                   {/* Action Buttons */}

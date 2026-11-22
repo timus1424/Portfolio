@@ -1,5 +1,6 @@
 import { motion, useScroll, useMotionValueEvent } from 'motion/react';
 import { useState } from 'react';
+import ashbornLogo from '@/assets/ashborn-mark.png';
 
 export function Navigation() {
   const [isVisible, setIsVisible] = useState(false);
@@ -44,7 +45,7 @@ export function Navigation() {
             className="text-lg tracking-tight hover:text-accent transition-colors duration-300"
             style={{ fontWeight: 600 }}
           >
-            SM
+            <img src={ashbornLogo} alt="Ashborn home" className="site-mark" />
           </a>
 
           <div className="hidden md:flex items-center gap-8">
@@ -60,6 +61,18 @@ export function Navigation() {
               </a>
             ))}
           </div>
+        </div>
+        <div className="flex gap-5 overflow-x-auto pt-3 md:hidden" aria-label="Section navigation">
+          {navItems.map((item) => (
+            <a
+              key={item.label}
+              href={item.href}
+              onClick={(e) => handleClick(e, item.href)}
+              className="shrink-0 text-xs text-muted-foreground hover:text-foreground"
+            >
+              {item.label}
+            </a>
+          ))}
         </div>
       </div>
     </motion.nav>

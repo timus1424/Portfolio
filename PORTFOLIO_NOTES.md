@@ -1,99 +1,22 @@
-# Portfolio Implementation Notes
+# Portfolio notes
 
-## Spline 3D Integration
+## Direction
 
-The hero section uses a Spline 3D robot scene. The current implementation uses a placeholder URL. To integrate your own Spline scene:
+The site uses a quiet dark editorial system with warm gold as its accent. The hero paints the supplied ASCII self-portrait first, then dynamically loads a Three.js phoenix medallion on capable desktop browsers. Scroll progress turns the medallion; reduced-motion, data-saver, low-memory, mobile, and WebGL fallback paths keep the poster. The scene pauses offscreen and disposes its WebGL resources on teardown. The workflow band and capability map use lightweight CSS/SVG signals. No external scene or font is loaded.
 
-1. **Create or find your Spline robot scene** with cursor-following interaction
-2. **Export from Spline**: Get the public URL (File → Export → Get embed code)
-3. **Update the iframe URL** in `/src/app/components/Hero.tsx`:
-   ```tsx
-   <iframe
-     src="YOUR_SPLINE_PUBLIC_URL_HERE"
-     frameBorder="0"
-     width="100%"
-     height="100%"
-     className="w-full h-full"
-     loading="eager"
-     title="3D Robot Scene"
-   />
-   ```
+The core palette is defined in `src/styles/theme.css`: background `#09090B`, surface `#171715`, text `#F1EEE6`, accent `#D6B36A`, and accent 2 `#8A6A38`. Each featured project carries its own five-color study in `src/app/components/Projects.tsx`.
 
-### Spline Setup Guidelines
+## Editing projects
 
-- Ensure the robot has cursor-tracking enabled in Spline
-- Keep the scene optimized for web (low poly count)
-- Test on mobile devices for performance
-- The fallback image (provided robot image) displays if Spline fails to load
+Project copy, links, images, and palettes live in the `projects` array in `src/app/components/Projects.tsx`. Keep titles and claims accurate, use optimized image formats with an explicit aspect ratio, and mark below-the-fold images lazy. Check every project link before publishing.
 
-## Contact Information
+## Contact links
 
-Update the contact links in `/src/app/components/Contact.tsx`:
+Update the contact links in `src/app/components/Contact.tsx`. External links need a complete `https://` URL. The current resume points to Google Drive; replace it if the resume moves.
 
-```tsx
-const contactLinks = [
-  {
-    label: 'Email',
-    href: 'mailto:your.email@example.com', // Update this
-    icon: Mail,
-  },
-  {
-    label: 'GitHub',
-    href: 'https://github.com/yourusername', // Update this
-    icon: Github,
-  },
-  {
-    label: 'LinkedIn',
-    href: 'https://linkedin.com/in/yourprofile', // Update this
-    icon: Linkedin,
-  },
-  {
-    label: 'Resume',
-    href: '/resume.pdf', // Place your resume PDF in /public folder
-    icon: FileDown,
-  },
-];
-```
+## Local workflow
 
-## Design System
+- `npm run dev` starts the Vite development server.
+- `npm run build` checks the production bundle.
 
-### Colors
-- Background: `#0B0B0E`
-- Primary Text: `#E5E7EB`
-- Muted Text: `#9CA3AF`
-- Accent: `#06b6d4` (Cyan)
-
-### Typography
-- Font: Inter (Google Fonts)
-- Tight letter spacing for headings
-- Font weights: 300 (light), 400 (regular), 500 (medium), 600 (semibold)
-
-### Animation Philosophy
-- Restrained micro-animations only
-- Fade and slide transitions
-- Scroll-triggered reveals
-- No flashy or distracting effects
-
-## Deployment (Vercel)
-
-This portfolio is optimized for Vercel deployment:
-
-1. Push to GitHub
-2. Import repository in Vercel
-3. Deploy (no special configuration needed)
-
-## Performance Considerations
-
-- Spline iframe may increase initial load time
-- Consider adding a loading state if needed
-- Images are optimized with fallbacks
-- Smooth scroll behavior enabled
-- All animations use GPU-accelerated transforms
-
-## Mobile Optimization
-
-- Fully responsive design
-- Navigation hidden on mobile (scroll-based)
-- Touch-friendly contact cards
-- Optimized typography scaling
-- Spline fallback for low-power devices
+Respect reduced-motion preferences, keep the initial view lightweight, and load Three.js only for the hero scene after first paint. Spline and remote 3D embeds are not part of this project.

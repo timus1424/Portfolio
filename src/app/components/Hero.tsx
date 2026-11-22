@@ -1,275 +1,145 @@
-import { motion } from "motion/react";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useState, type ComponentType } from 'react';
+import { motion, useReducedMotion, useScroll, useTransform, type MotionValue } from 'motion/react';
+import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
+import asciiPortrait from '@/assets/sumit-ascii-gold.png';
+import ashbornLogo from '@/assets/ashborn-mark.png';
 
-import exampleImage from "figma:asset/c52c4d6bd9bff84a4fe27080ff430c32313e5c28.png";
+type SceneProps = {
+  progress: MotionValue<number>;
+  onReady: () => void;
+  onFallback: () => void;
+};
 
-// Declare spline-viewer custom element for TypeScript
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      'spline-viewer': any;
-    }
-  }
+function canUpgradeToWebGL() {
+  if (typeof window === 'undefined' || window.innerWidth < 760) return false;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+
+  const browser = navigator as Navigator & {
+    connection?: { saveData?: boolean };
+    deviceMemory?: number;
+  };
+  if (browser.connection?.saveData) return false;
+  if (browser.deviceMemory !== undefined && browser.deviceMemory < 4) return false;
+  if (browser.hardwareConcurrency !== undefined && browser.hardwareConcurrency < 4) return false;
+
+  const probe = document.createElement('canvas');
+  const context = probe.getContext('webgl2', { failIfMajorPerformanceCaveat: true });
+  if (!context) return false;
+  context.getExtension('WEBGL_lose_context')?.loseContext();
+  return true;
 }
 
 export function Hero() {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [splineError, setSplineError] = useState(false);
-  const [splineLoaded, setSplineLoaded] = useState(false);
-  const splineRef = useRef<any>(null);
-  const mousePosition = useRef({ x: 0, y: 0 });
+  const stageRef = useRef<HTMLDivElement>(null);
+  const [Scene, setScene] = useState<ComponentType<SceneProps> | null>(null);
+  const [sceneReady, setSceneReady] = useState(false);
+  const { scrollYProgress } = useScroll({
+    target: stageRef,
+    offset: ['start start', 'end start'],
+  });
+  const reducedMotion = useReducedMotion();
+  const posterRotateY = useTransform(scrollYProgress, [0, 1], [0, 22]);
+  const posterRotateX = useTransform(scrollYProgress, [0, 1], [0, -8]);
+  const crestRotateY = useTransform(scrollYProgress, [0, 1], [0, 165]);
+  const crestRotateX = useTransform(scrollYProgress, [0, 1], [0, 16]);
 
   useEffect(() => {
-    setIsLoaded(true);
-    
-    // Load Spline viewer script
-    const script = document.createElement('script');
-    script.type = 'module';
-    script.src = 'https://unpkg.com/@splinetool/viewer@1.12.45/build/spline-viewer.js';
-    script.onload = () => {
-      console.log('Spline viewer script loaded');
-      setSplineLoaded(true);
-    };
-    script.onerror = () => {
-      console.error('Failed to load Spline viewer');
-      setSplineError(true);
-    };
-    document.head.appendChild(script);
+    if (!canUpgradeToWebGL()) return;
+    let active = true;
+    const frame = requestAnimationFrame(() => {
+      import('./PhoenixScene')
+        .then(({ PhoenixScene }) => {
+          if (active) setScene(() => PhoenixScene);
+        })
+        .catch(() => setScene(null));
+    });
 
     return () => {
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
-      }
+      active = false;
+      cancelAnimationFrame(frame);
     };
   }, []);
 
-  // Initialize Spline scene and set up cursor tracking
-  useEffect(() => {
-    if (!splineLoaded || splineError) return;
-
-    const splineViewer = document.querySelector('spline-viewer');
-    if (!splineViewer) return;
-
-    // Wait for Spline scene to load
-    const onSplineLoad = (e: any) => {
-      console.log('Spline scene loaded');
-      splineRef.current = e.target;
-      
-      // Log all objects in the scene to find the head
-      setTimeout(() => {
-        if (splineRef.current) {
-          console.log('Spline scene objects:', splineRef.current);
-        }
-      }, 1000);
-    };
-
-    splineViewer.addEventListener('load', onSplineLoad);
-
-    return () => {
-      splineViewer.removeEventListener('load', onSplineLoad);
-    };
-  }, [splineLoaded, splineError]);
-
-  // Track cursor movement and rotate robot head
-  useEffect(() => {
-    if (!splineLoaded || splineError) return;
-
-    let animationFrameId: number;
-    let lastUpdateTime = 0;
-    const updateInterval = 1000 / 60; // 60fps limit
-
-    const handleMouseMove = (event: MouseEvent) => {
-      // Normalize mouse position to -1 to 1 range
-      const x = (event.clientX / window.innerWidth) * 2 - 1;
-      const y = -(event.clientY / window.innerHeight) * 2 + 1;
-      
-      mousePosition.current = { x, y };
-    };
-
-    const animate = (currentTime: number) => {
-      // Throttle updates to 60fps
-      if (currentTime - lastUpdateTime < updateInterval) {
-        animationFrameId = requestAnimationFrame(animate);
-        return;
-      }
-      lastUpdateTime = currentTime;
-
-      const splineViewer = document.querySelector('spline-viewer') as any;
-      
-      if (splineViewer && splineViewer.scene) {
-        try {
-          const { x, y } = mousePosition.current;
-          
-          // Try to find the robot head or relevant objects
-          // Common names: 'Head', 'head', 'Robot Head', 'Character', 'Neck'
-          const possibleNames = ['Head', 'head', 'Robot Head', 'robot head', 'Character', 'character', 'Neck', 'neck', 'Face', 'face'];
-          
-          let headObject = null;
-          for (const name of possibleNames) {
-            headObject = splineViewer.scene.findObjectByName(name);
-            if (headObject) {
-              break;
-            }
-          }
-
-          if (headObject) {
-            // Smooth rotation based on cursor position
-            const targetRotationY = x * 0.5; // Horizontal rotation (left-right)
-            const targetRotationX = y * 0.3; // Vertical rotation (up-down)
-            
-            // Smooth interpolation for natural movement
-            if (headObject.rotation) {
-              headObject.rotation.y += (targetRotationY - headObject.rotation.y) * 0.1;
-              headObject.rotation.x += (targetRotationX - headObject.rotation.x) * 0.1;
-            }
-          } else {
-            // If no head found, try to rotate the camera subtly
-            const camera = splineViewer.scene.findObjectByName('Camera');
-            if (camera && camera.rotation) {
-              const targetRotationY = x * 0.15;
-              const targetRotationX = y * 0.1;
-              
-              camera.rotation.y += (targetRotationY - camera.rotation.y) * 0.05;
-              camera.rotation.x += (targetRotationX - camera.rotation.x) * 0.05;
-            }
-          }
-        } catch (error) {
-          // Silently handle errors to avoid console spam
-        }
-      }
-
-      animationFrameId = requestAnimationFrame(animate);
-    };
-
-    window.addEventListener('mousemove', handleMouseMove, { passive: true });
-    animationFrameId = requestAnimationFrame(animate);
-    
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      cancelAnimationFrame(animationFrameId);
-    };
-  }, [splineLoaded, splineError]);
+  const usePoster = () => {
+    setSceneReady(false);
+    setScene(null);
+  };
 
   return (
-    <section className="relative h-screen w-full overflow-hidden">
-      {/* Spline 3D Robot Background with Fallback */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        {!splineError && splineLoaded ? (
-          <spline-viewer 
-            url="https://prod.spline.design/ahlgb9x4HVCJja6Q/scene.splinecode"
-            events-target="global"
-            style={{
-              width: '100%',
-              height: '100%',
-              pointerEvents: 'auto'
-            }}
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-background">
-            <img
-              src={exampleImage}
-              alt="Robot"
-              className="object-contain max-w-2xl opacity-20"
-            />
+    <div ref={stageRef} className="hero-stage">
+      <section className="hero sticky top-0 isolate min-h-[100svh] h-[100svh] overflow-hidden px-6 pb-16 pt-8 md:px-12">
+        <motion.figure
+          className="hero-portrait"
+          data-scene-ready={sceneReady}
+          style={{ rotateY: reducedMotion ? 0 : posterRotateY, rotateX: reducedMotion ? 0 : posterRotateX }}
+          aria-label="ASCII art portrait of Sumit Mintri"
+        >
+          <img src={asciiPortrait} alt="" fetchpriority="high" style={{ opacity: sceneReady ? 0.52 : 1 }} />
+          <motion.div
+            className="hero-css-crest"
+            style={{ rotateY: reducedMotion ? 0 : crestRotateY, rotateX: reducedMotion ? 0 : crestRotateX, opacity: sceneReady ? 0 : 1 }}
+            aria-hidden="true"
+          >
+            <span className="hero-css-crest__frame hero-css-crest__frame--outer" />
+            <span className="hero-css-crest__frame hero-css-crest__frame--inner" />
+            <span className="hero-css-crest__axis hero-css-crest__axis--horizontal" />
+            <span className="hero-css-crest__axis hero-css-crest__axis--vertical" />
+            <span className="hero-css-crest__core" />
+          </motion.div>
+          {Scene && (
+            <div className="hero-webgl" style={{ opacity: sceneReady ? 1 : 0 }}>
+              <Scene
+                progress={scrollYProgress}
+                onReady={() => setSceneReady(true)}
+                onFallback={usePoster}
+              />
+            </div>
+          )}
+          <figcaption>SCROLL STUDY / THREE.JS + CSS FALLBACK</figcaption>
+        </motion.figure>
+
+        <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-between">
+          <header className="flex items-center justify-between text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
+            <a href="#top" aria-label="Ashborn home" className="hero-brand"><img src={ashbornLogo} alt="" /></a>
+            <span className="hidden sm:inline">Independent mind · India</span>
+            <a href="#contact" className="group flex items-center gap-2 text-foreground transition-colors hover:text-accent">
+              Let’s talk <ArrowUpRight size={14} className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+            </a>
+          </header>
+
+          <div className="grid items-end gap-12 lg:grid-cols-[minmax(0,1.2fr)_minmax(250px,0.55fr)]">
+            <div className="max-w-4xl">
+              <p className="hero-kicker mb-6 flex items-center gap-3 text-xs uppercase tracking-[0.2em] text-accent">
+                <span className="h-px w-8 bg-accent" /> <span className="hero-twinkle">Building with intent</span>
+              </p>
+              <h1 className="hero-title text-foreground">
+                Sumit<br /><span className="hero-title__second">Mintri<span className="text-accent">.</span></span>
+              </h1>
+              <p className="mt-8 max-w-[20rem] text-base leading-7 text-muted-foreground md:text-lg">
+                Computer science student turning complex ideas into thoughtful digital products, useful systems, and better ways of working.
+              </p>
+              <div className="mt-9 flex flex-wrap items-center gap-5">
+                <a href="#projects" className="inline-flex items-center gap-3 rounded-full bg-accent px-5 py-3 text-sm font-medium text-[#17130b] transition-transform hover:-translate-y-0.5">
+                  Explore selected work <ArrowDownRight size={16} />
+                </a>
+                <a href="#about" className="text-sm text-muted-foreground underline decoration-border underline-offset-4 transition-colors hover:text-foreground">A little about me</a>
+              </div>
+            </div>
+
+            <aside className="hero-note hidden border-l border-border pl-6 pb-2 lg:block">
+              <p className="mb-3 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Currently exploring</p>
+              <p className="max-w-xs text-sm leading-6 text-foreground">AI workflows, product thinking, and the small details that make technology feel human.</p>
+              <a href="#projects" className="mt-7 inline-flex items-center gap-2 text-xs uppercase tracking-[0.14em] text-accent">View the work <ArrowUpRight size={13} /></a>
+            </aside>
           </div>
-        )}
-      </div>
 
-      {/* Dark Overlay for Readability */}
-      <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/40 via-black/30 to-black/60 pointer-events-none" />
-
-      {/* Content Overlay */}
-      <div className="relative z-20 flex items-center justify-center h-full px-6 pointer-events-none">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={
-            isLoaded
-              ? { opacity: 1, y: 0 }
-              : { opacity: 0, y: 20 }
-          }
-          transition={{
-            duration: 0.8,
-            ease: [0.16, 1, 0.3, 1],
-          }}
-          className="text-center max-w-4xl"
-        >
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={
-              isLoaded
-                ? { opacity: 1, y: 0 }
-                : { opacity: 0, y: 20 }
-            }
-            transition={{
-              duration: 0.8,
-              delay: 0.2,
-              ease: [0.16, 1, 0.3, 1],
-            }}
-            className="text-5xl md:text-7xl lg:text-8xl tracking-tight mb-6"
-            style={{
-              fontWeight: 600,
-              letterSpacing: "-0.03em",
-            }}
-          >
-            SUMIT MINTRI
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={
-              isLoaded
-                ? { opacity: 1, y: 0 }
-                : { opacity: 0, y: 20 }
-            }
-            transition={{
-              duration: 0.8,
-              delay: 0.4,
-              ease: [0.16, 1, 0.3, 1],
-            }}
-            className="text-lg md:text-xl text-muted-foreground mb-4"
-            style={{ fontWeight: 400 }}
-          >
-            Computer Science & Engineering Undergraduate
-          </motion.p>
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={
-              isLoaded
-                ? { opacity: 1, y: 0 }
-                : { opacity: 0, y: 20 }
-            }
-            transition={{
-              duration: 0.8,
-              delay: 0.6,
-              ease: [0.16, 1, 0.3, 1],
-            }}
-            className="text-base md:text-lg text-muted-foreground/80 max-w-2xl mx-auto"
-            style={{ fontWeight: 300 }}
-          >
-Engineering student focused on AI-assisted systems, research, and execution-driven problem solving.          </motion.p>
-        </motion.div>
-      </div>
-
-      {/* Scroll Indicator */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={isLoaded ? { opacity: 1 } : { opacity: 0 }}
-        transition={{ duration: 0.8, delay: 1 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20"
-      >
-        <motion.div
-          animate={{ y: [0, 8, 0] }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-          className="w-6 h-10 border-2 border-muted-foreground/30 rounded-full flex items-start justify-center p-2"
-        >
-          <div className="w-1 h-2 bg-muted-foreground/50 rounded-full" />
-        </motion.div>
-      </motion.div>
-    </section>
+          <footer className="flex items-center justify-between border-t border-border pt-5 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            <span>Portfolio · Main</span>
+            <span className="inline-flex items-center gap-2"><span className="hero-scroll-dot" /> Scroll to explore</span>
+            <span className="hidden sm:inline">27°10'57.4"N — 88°30′07.9"E</span>
+          </footer>
+        </div>
+      </section>
+    </div>
   );
 }
